@@ -1,0 +1,88 @@
+;/*++
+;
+;Copyright (c) 2000-2015 ELTIMA Software
+;
+;Module Name:
+;
+;    evserial8.inf
+;
+;Abstract:
+;
+;    INF file for installing VSPorts class with Virtual Serial Port device driver.
+;
+;--*/
+[Version]
+Signature="$WINDOWS NT$"
+Class=EVSPorts8
+ClassGuid={14C9CD15-EC33-49c7-8C7B-0FA42FD96F8A}
+Provider=%ELTIMA%
+DriverVer=12/02/2016,8.0.355
+CatalogFile=evserial8.cat
+
+[DestinationDirs]
+Drivers_Dir = 12
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+evserial8.sys = 1,,
+
+; ================= Class section =====================
+[ClassInstall32]
+Addreg=EVSerialClassReg     
+
+[EVSerialClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-23
+HKR,,SilentInstall,,1
+HKR,,NoInstallClass,,1
+
+;*********************************************
+; Virtual Serial Port Device  Install Section
+;*********************************************
+[Manufacturer]
+%ELTIMA%=Eltima, NTx86, NTia64, NTamd64
+
+;2000
+[Eltima]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+
+;x86
+[Eltima.NTx86]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+
+;AMD64
+[Eltima.NTamd64]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+
+;IA64
+[Eltima.NTia64]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+
+[EVSerial_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+evserial8.sys
+
+;-------------- Service installation
+[EVSerial_Device.NT.Services]
+AddService = evserial8, %SPSVCINST_ASSOCSERVICE%, evserial_Service_Inst
+
+; -------------- evserial Driver install sections
+[evserial_Service_Inst]
+DisplayName    = %evserial.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START 
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\evserial8.sys
+LoadOrderGroup = Extended Base
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ELTIMA = "ELTIMA Software"
+ClassName = "Virtual Serial Ports 8 (Eltima Software)"
+EVSerialDevice.DeviceDesc = "Virtual Serial Port 8 (Eltima Software)"
+evserial.SVCDESC = "Virtual Serial Ports Driver 8 (Eltima Software)"
+DiskId1 = "Virtual Serial Bus Installation Disk #1"
