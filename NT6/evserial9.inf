@@ -1,0 +1,93 @@
+;/*++
+;
+;Copyright (c) 2000-2015 ELTIMA Software
+;
+;Module Name:
+;
+;    evserial9.inf
+;
+;Abstract:
+;
+;    INF file for installing VSPorts class with Virtual Serial Port device driver.
+;
+;--*/
+[Version]
+Signature="$WINDOWS NT$"
+Class=Ports
+ClassGuid={4d36e978-e325-11ce-bfc1-08002be10318}
+Provider=%ELTIMA%
+DriverVer=07/20/2017,9.0.369
+CatalogFile=evserial9.cat
+
+[DestinationDirs]
+Drivers_Dir = 12
+CoInstaller_CopyFiles = 11 ; System Dir( system32 on NT )
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+evserial9.sys = 1,,
+evspd9.dll = 1,,
+
+;*********************************************
+; Virtual Serial Port Device  Install Section
+;*********************************************
+[Manufacturer]
+%ELTIMA%=Eltima, NTx86, NTia64, NTamd64
+
+;2000
+[Eltima]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, evserial9
+
+;x86
+[Eltima.NTx86]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, evserial9
+
+;AMD64
+[Eltima.NTamd64]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, evserial9
+
+;IA64
+[Eltima.NTia64]
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, evserial9
+
+[EVSerial_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+evserial9.sys
+
+;-------------- Coinstaller installation
+
+[EVSerial_Device.NT.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CoInstaller_CopyFiles]
+evspd9.dll
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000,"evspd9.dll,EvspdCoInstaller"
+
+
+;-------------- Service installation
+[EVSerial_Device.NT.Services]
+AddService = evserial9, %SPSVCINST_ASSOCSERVICE%, evserial_Service_Inst
+
+; -------------- evserial Driver install sections
+[evserial_Service_Inst]
+DisplayName    = %evserial.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START 
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\evserial9.sys
+LoadOrderGroup = Extended Base
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ELTIMA = "ELTIMA Software"
+ClassName = "Virtual Serial Ports 9 (Eltima Software)"
+EVSerialDevice.DeviceDesc = "Virtual Serial Port 9 (Eltima Software)"
+evserial.SVCDESC = "Virtual Serial Ports Driver 9 (Eltima Software)"
+DiskId1 = "Virtual Serial Bus Installation Disk #1"

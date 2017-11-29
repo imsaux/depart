@@ -4,7 +4,7 @@
 ;
 ;Module Name:
 ;
-;    evserial8.inf
+;    evserial9.inf
 ;
 ;Abstract:
 ;
@@ -13,11 +13,11 @@
 ;--*/
 [Version]
 Signature="$WINDOWS NT$"
-Class=EVSPorts8
-ClassGuid={14C9CD15-EC33-49c7-8C7B-0FA42FD96F8A}
+Class=EVSPorts9
+ClassGuid={AA6F6ECF-1184-482A-AA09-D3A12AB52995}
 Provider=%ELTIMA%
-DriverVer=12/02/2016,8.0.355
-CatalogFile=evserial8.cat
+DriverVer=07/20/2017,9.0.369
+CatalogFile=evserial9.cat
 
 [DestinationDirs]
 Drivers_Dir = 12
@@ -26,7 +26,7 @@ Drivers_Dir = 12
 1 = %DiskId1%,,,""
 
 [SourceDisksFiles]
-evserial8.sys = 1,,
+evserial9.sys = 1,,
 
 ; ================= Class section =====================
 [ClassInstall32]
@@ -46,29 +46,29 @@ HKR,,NoInstallClass,,1
 
 ;2000
 [Eltima]
-%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL9
 
 ;x86
 [Eltima.NTx86]
-%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL9
 
 ;AMD64
 [Eltima.NTamd64]
-%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL9
 
 ;IA64
 [Eltima.NTia64]
-%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL8
+%EVSerialDevice.DeviceDesc%=EVSerial_Device, EVSERIAL9
 
 [EVSerial_Device.NT]
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
-evserial8.sys
+EVSERIAL9.sys
 
 ;-------------- Service installation
 [EVSerial_Device.NT.Services]
-AddService = evserial8, %SPSVCINST_ASSOCSERVICE%, evserial_Service_Inst
+AddService = EVSERIAL9, %SPSVCINST_ASSOCSERVICE%, evserial_Service_Inst
 
 ; -------------- evserial Driver install sections
 [evserial_Service_Inst]
@@ -76,13 +76,13 @@ DisplayName    = %evserial.SVCDESC%
 ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
 StartType      = 3               ; SERVICE_DEMAND_START 
 ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %12%\evserial8.sys
+ServiceBinary  = %12%\EVSERIAL9.sys
 LoadOrderGroup = Extended Base
 
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
 ELTIMA = "ELTIMA Software"
-ClassName = "Virtual Serial Ports 8 (Eltima Software)"
-EVSerialDevice.DeviceDesc = "Virtual Serial Port 8 (Eltima Software)"
-evserial.SVCDESC = "Virtual Serial Ports Driver 8 (Eltima Software)"
+ClassName = "Virtual Serial Ports 9 (Eltima Software)"
+EVSerialDevice.DeviceDesc = "Virtual Serial Port 9 (Eltima Software)"
+evserial.SVCDESC = "Virtual Serial Ports Driver 9 (Eltima Software)"
 DiskId1 = "Virtual Serial Bus Installation Disk #1"

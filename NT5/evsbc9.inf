@@ -4,7 +4,7 @@
 ;
 ;Module Name:
 ;
-;    evsbc8.inf
+;    evsbc9.inf
 ;
 ;Abstract:
 ;    INF file for installing virtual serial bus enumerator driver
@@ -16,8 +16,8 @@ Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
 
 Provider=%ELTIMA%
-DriverVer=12/02/2016,8.0.355
-CatalogFile=evsbc8.cat
+DriverVer=07/20/2017,9.0.369
+CatalogFile=evsbc9.cat
 
 [DestinationDirs]
 Drivers_Dir = 12
@@ -26,7 +26,7 @@ Drivers_Dir = 12
 1 = %DiskId1%,,,""
 
 [SourceDisksFiles]
-evsbc8.sys  = 1,,
+evsbc9.sys  = 1,,
 ;evserial.sys = 1,,
 
 ;*****************************************
@@ -38,28 +38,28 @@ evsbc8.sys  = 1,,
 
 
 [Eltima]
-%VSBus.DeviceDesc%=VSBus_Device, VSBC8
+%VSBus.DeviceDesc%=VSBus_Device, VSBC9
 
 [Eltima.NTx86]
-%VSBus.DeviceDesc%=VSBus_Device, VSBC8
+%VSBus.DeviceDesc%=VSBus_Device, VSBC9
 
 [Eltima.NTamd64]
-%VSBus.DeviceDesc%=VSBus_Device, VSBC8
+%VSBus.DeviceDesc%=VSBus_Device, VSBC9
 
 [Eltima.NTia64]
-%VSBus.DeviceDesc%=VSBus_Device, VSBC8
+%VSBus.DeviceDesc%=VSBus_Device, VSBC9
 
 
 [VSBus_Device.NT]
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
-evsbc8.sys
+evsbc9.sys
 ;evserial.sys
 
 ;-------------- Service installation
 [VSBus_Device.NT.Services]
-AddService = VSBC8,%SPSVCINST_ASSOCSERVICE%, VSBus_Service_Inst
+AddService = VSBC9,%SPSVCINST_ASSOCSERVICE%, VSBus_Service_Inst
 
 ; -------------- vsbus driver install sections
 [VSBus_Service_Inst]
@@ -67,7 +67,7 @@ DisplayName    = %VSBus.SVCDESC%
 ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
 StartType      = 3               ; SERVICE_DEMAND_START 
 ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %12%\evsbc8.sys
+ServiceBinary  = %12%\evsbc9.sys
 LoadOrderGroup = Extended Base
 
 
@@ -75,5 +75,5 @@ LoadOrderGroup = Extended Base
 SPSVCINST_ASSOCSERVICE= 0x00000002
 ELTIMA = "ELTIMA Software"
 DiskId1 = "Virtual Serial Bus Installation Disk #1"
-VSBus.DeviceDesc = "Virtual Serial Bus Enumerator 8 (Eltima Software)"
-VSBus.SVCDESC = "Virtual Serial Bus Enumerator 8 (Eltima Software)"
+VSBus.DeviceDesc = "Virtual Serial Bus Enumerator 9 (Eltima Software)"
+VSBus.SVCDESC = "Virtual Serial Bus Enumerator 9 (Eltima Software)"

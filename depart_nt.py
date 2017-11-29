@@ -4,6 +4,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QFileDialog
 import datetime
 import os.path
+import os
 import socket
 import threading
 import serial
@@ -12,6 +13,7 @@ import winreg
 import pickle
 import sys
 import copy
+import ui1103
 
 class CONSTVALUES():
     """单线单向 （虎石台， 上海）"""
@@ -177,6 +179,11 @@ class Car():
         self.R_src = _pics[1]
         self.ZL_src = _pics[2]
         self.ZR_src = _pics[3]
+        self.L_width = 0
+        self.R_width = 0
+        self.ZL_width = 0
+        self.ZR_width = 0
+
         self.code = None
         self.info = _info
         self.warningCount = 0
@@ -208,6 +215,11 @@ class Car():
 
     def getWarningInfo(self):
         pass
+
+    def getPicInfo(self):
+        self.L_width, self.R_width, self.ZL_width, self.ZR_width = [QtGui.QImage(img).width for img in [self.L_src, self.R_src, self.ZL_src, self.ZR_src]]
+
+
 
     def setCode(self, _code):
         self.code = _code
@@ -251,7 +263,7 @@ class Train():
             index.append("%s\t%s\t%s\t%s\n" % (
                 str(i + 1),
                 str(int(float(self.car[i].speed) * 10)),
-                '20000' if i == 0 else '6000',
+                self.car[i].L_width,
                 self.car[i].code
             ))
         self.INDEX = index
@@ -348,7 +360,6 @@ class Loader(QtWidgets.QDialog):
         self.listView.itemDoubleClicked.connect(self.itemDbClick)
         self.listView_2.itemDoubleClicked.connect(self.itemDbClick)
         self.pushButton_2.clicked.connect(self._ok)
-
         self.pushButton.clicked.connect(self._cancel)
         self.data_init()
 
@@ -361,6 +372,7 @@ class Loader(QtWidgets.QDialog):
                     _root = QtWidgets.QListWidgetItem(self.eventSender.lastRightSender)
                     _root.setText(str(_case.name))
                     self.eventSender.lastRightSender.addItem(_root)
+
             elif self.eventSender.lastRightSender.objectName() in ['tr_new_case_sx', 'tr_new_case_xx']:
                 for i in range(self.listView_2.count()):
                     _item = self.listView_2.takeItem(0).text()
@@ -371,21 +383,27 @@ class Loader(QtWidgets.QDialog):
                     self.eventSender.lastRightSender.addTopLevelItem(_root)
             elif self.eventSender.lastRightSender.objectName() == 'tr_new_train':
                 _count = self.eventSender.lastRightSender.topLevelItemCount()
+                _insertPos = -1
+                if len(self.eventSender.lastRightSender.selectedItems()) > 0:
+                    _insertPos = self.eventSender.lastRightSender.indexOfTopLevelItem(self.eventSender.lastRightSender.selectedItems()[0])
                 for i in range(self.listView_2.count()):
                     _item = self.listView_2.takeItem(0).text()
                     _car = self.eventSender.logic.car_mgr[_item]
-                    _root = QtWidgets.QTreeWidgetItem(self.eventSender.lastRightSender)
+                    _root = QtWidgets.QTreeWidgetItem()
                     _root.setText(0, str(_car.kind))
                     _root.setText(1, str(_car.length))
                     _root.setText(2, '100')
                     _root.setText(3, UTIL.getCode(str(_car.kind), _count + i))
                     _root.setCheckState(4, QtCore.Qt.Checked)
                     _root.setText(5, str(_car.info))
-                    self.eventSender.lastRightSender.addTopLevelItem(_root)
-            self._cancel()
-
+                    if _insertPos > -1:
+                        self.eventSender.lastRightSender.insertTopLevelItem(_insertPos, _root)
+                    else:
+                        self.eventSender.lastRightSender.addTopLevelItem(_root)
         except Exception as e:
             pass
+        finally:
+            self._cancel()
 
     def _cancel(self):
         self.ui.close()
@@ -440,15 +458,16 @@ class UI(QtWidgets.QMainWindow):
         self.tab_all.setObjectName("tab_all")
         self.tab_monitor = QtWidgets.QWidget()
         self.tab_monitor.setObjectName("tab_monitor")
-        self.openGLWidget = QtWidgets.QOpenGLWidget(self.tab_monitor)
-        self.openGLWidget.setGeometry(QtCore.QRect(10, 10, 561, 281))
-        self.openGLWidget.setObjectName("openGLWidget")
-        self.progressBar = QtWidgets.QProgressBar(self.tab_monitor)
-        self.progressBar.setGeometry(QtCore.QRect(10, 460, 561, 23))
-        self.progressBar.setProperty("value", 24)
-        self.progressBar.setObjectName("progressBar")
+        # self.openGLWidget = QtWidgets.QOpenGLWidget(self.tab_monitor)
+        # self.openGLWidget.setGeometry(QtCore.QRect(10, 10, 561, 281))
+        # self.openGLWidget.setObjectName("openGLWidget")
+        # self.progressBar = QtWidgets.QProgressBar(self.tab_monitor)
+        # self.progressBar.setGeometry(QtCore.QRect(10, 460, 561, 23))
+        # self.progressBar.setProperty("value", 24)
+        # self.progressBar.setObjectName("progressBar")
         self.listView_3 = QtWidgets.QListWidget(self.tab_monitor)
-        self.listView_3.setGeometry(QtCore.QRect(10, 300, 561, 151))
+        self.listView_3.setGeometry(QtCore.QRect(10, 10, 561, 455))
+        # self.listView_3.setGeometry(QtCore.QRect(10, 300, 561, 151))
         self.listView_3.setObjectName("listView_3")
         self.tab_all.addTab(self.tab_monitor, "")
         self.tab_do = QtWidgets.QWidget()
@@ -836,6 +855,7 @@ class UI(QtWidgets.QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.setDefaultValue()
 
+
     def setDefaultValue(self):
         self.tb_options_wait_time.setText('30')
         self.tb_sx_ip.setText('202.202.202.2')
@@ -977,7 +997,7 @@ class UI(QtWidgets.QMainWindow):
             _sender = self.sender()
             self.lastRightSender = _sender
             _rightMenu = QtWidgets.QMenu(_sender)
-            _action_1 = _rightMenu.addAction(u'插入')
+            _action_1 = _rightMenu.addAction(u'添加')
             _action_2 = _rightMenu.addAction(u'删除')
             _action_1.triggered.connect(self.showDialog)
             _action_2.triggered.connect(self.deleteItem)
@@ -994,6 +1014,7 @@ class UI(QtWidgets.QMainWindow):
                 self.lastRightSender.removeItemWidget(item)
             else:
                 root = self.lastRightSender.invisibleRootItem()
+
                 for item in self.lastRightSender.selectedItems():
                     (item.parent() or root).removeChild(item)
         except Exception as e:
@@ -1172,8 +1193,8 @@ class logic():
     def __init__(self):
         self.sx = None
         self.xx = None
-        self.sx_com = 1
-        self.xx_com = 2
+        self.sx_com = 9
+        self.xx_com = 11
         self.sx_in_use = False
         self.xx_in_use = False
         self.free_time = 120
@@ -1315,7 +1336,6 @@ class logic():
                     _train.updateTime()
                     self.mainUI.toPrint('=%s= %s ' %
                                         (str(datetime.datetime.now()), UTIL.getTime(_type='file')))
-                    # await asyncio.sleep(1)
                     # 来车信息
                     if (line == 'sx' and self.lineMode != CONSTVALUES.LINE_MODE_1L2D) or (_direction == 'forward' and self.lineMode == CONSTVALUES.LINE_MODE_1L2D):
                         self.sx_in_use = True
@@ -1471,7 +1491,7 @@ class logic():
                             dst_r_path = ''
                             dst_zl_path = ''
                             dst_zr_path = ''
-                            if self.lineMode != LINE_MODE_1L2D and line == 'sx':
+                            if self.lineMode != CONSTVALUES.LINE_MODE_1L2D and line == 'sx':
                                 dst_r_path = os.path.join(dstbasepath, self.sx_ip,
                                                           str(UTIL.getTime(_time=_train.time, _type='file')),
                                                           'R%s_%s.jpg' % (_carIndex.zfill(
@@ -1488,10 +1508,10 @@ class logic():
                                                            str(UTIL.getTime(_time=_train.time, _type='file')),
                                                            'ZL%s_%s.jpg' % (_carIndex.zfill(
                                                                3), _carIndex))
-                                if self.lineMode == LINE_MODE_1L1D and self.xx_in_use:
+                                if self.lineMode == CONSTVALUES.LINE_MODE_1L1D and self.xx_in_use:
                                     car.R_src = os.path.join(
                                         'resources', 'jiaocuo_R.jpg')
-                            elif self.lineMode != LINE_MODE_1L2D and line == 'xx':
+                            elif self.lineMode != CONSTVALUES.LINE_MODE_1L2D and line == 'xx':
                                 dst_r_path = os.path.join(dstbasepath, self.xx_ip,
                                                           str(UTIL.getTime(_time=_train.time, _type='file')),
                                                           'R%s_%s.jpg' % (_carIndex.zfill(
@@ -1508,10 +1528,10 @@ class logic():
                                                            str(UTIL.getTime(_time=_train.time, _type='file')),
                                                            'ZL%s_%s.jpg' % (_carIndex.zfill(
                                                                3), _carIndex))
-                                if self.lineMode == LINE_MODE_1L1D and self.sx_in_use:
+                                if self.lineMode == CONSTVALUES.LINE_MODE_1L1D and self.sx_in_use:
                                     car.R_src = os.path.join(
                                         'resources', 'jiaocuo_R.jpg')
-                            elif self.lineMode == LINE_MODE_1L2D and _direction == 'forward':
+                            elif self.lineMode == CONSTVALUES.LINE_MODE_1L2D and _direction == 'forward':
                                 dst_r_path = os.path.join(dstbasepath, self.sx_ip,
                                                           str(UTIL.getTime(_time=_train.time, _type='file')),
                                                           'R%s_%s.jpg' % (_carIndex.zfill(
@@ -1528,7 +1548,7 @@ class logic():
                                                            str(UTIL.getTime(_time=_train.time, _type='file')),
                                                            'ZL%s_%s.jpg' % (_carIndex.zfill(
                                                                3), _carIndex))
-                            elif self.lineMode == LINE_MODE_1L2D and _direction == 'backward':
+                            elif self.lineMode == CONSTVALUES.LINE_MODE_1L2D and _direction == 'backward':
                                 dst_r_path = os.path.join(dstbasepath, self.xx_ip,
                                                           str(UTIL.getTime(_time=_train.time, _type='file')),
                                                           'R%s_%s.jpg' % (_carIndex.zfill(
@@ -1546,14 +1566,14 @@ class logic():
                                                            'ZL%s_%s.jpg' % (_carIndex.zfill(
                                                                3), _carIndex))
 
-                            if self.lineMode == LINE_MODE_1L2D and _direction == 'forward':
+                            if self.lineMode == CONSTVALUES.LINE_MODE_1L2D and _direction == 'forward':
                                 if not os.path.exists(os.path.join(dstbasepath, self.sx_ip, str(UTIL.getTime(_time=_train.time, _type='file')))):
                                     os.mkdir(os.path.join(dstbasepath, self.sx_ip, str(
                                         UTIL.getTime(_time=_train.time, _type='file'))))
                                 if not os.path.exists(os.path.join(dstZXbasepath, self.sx_zip, str(UTIL.getTime(_time=_train.time, _type='file')))):
                                     os.mkdir(os.path.join(dstZXbasepath, self.sx_zip, str(
                                         UTIL.getTime(_time=_train.time, _type='file'))))
-                            elif self.lineMode == LINE_MODE_1L2D and _direction == 'backward':
+                            elif self.lineMode == CONSTVALUES.LINE_MODE_1L2D and _direction == 'backward':
                                 if not os.path.exists(os.path.join(dstbasepath, self.xx_ip, str(UTIL.getTime(_time=_train.time, _type='file')))):
                                     os.mkdir(os.path.join(dstbasepath, self.xx_ip, str(
                                         UTIL.getTime(_time=_train.time, _type='file'))))
@@ -1591,7 +1611,7 @@ class logic():
                             if os.path.exists(car.ZR_src):
                                 _zlst.append(('ZR', car.ZR_src))
 
-                            if self.lineMode == LINE_MODE_1L2D and _direction == 'forward':
+                            if self.lineMode == CONSTVALUES.LINE_MODE_1L2D and _direction == 'forward':
                                 _xml = self.build_xml(
                                     _lst,
                                     line_id='1',
@@ -1801,24 +1821,29 @@ class logic():
                 continue
 
     def start_init(self):
-        if not self.sx_serial.isOpen():
+        try:
+            if not self.sx_serial.isOpen():
+                self.sx_serial.open()
+            if not self.xx_serial.isOpen():
+                self.xx_serial.open()
+        except Exception as e:
+            self._serialReg()
             self.sx_serial.open()
-        if not self.xx_serial.isOpen():
             self.xx_serial.open()
-        pass
 
     def serial_init(self):
         try:
-            port1 = ''.join(['COM', str(int(self.sx_com) + 10)])
-            port2 = ''.join(['COM', str(int(self.xx_com) + 10)])
             self.sx_serial = serial.Serial(
-                port=port1, baudrate=38400)
+                port='COM10', baudrate=38400)
             self.xx_serial = serial.Serial(
-                port=port2, baudrate=38400)
-        except:
-            self._createRegisterKey(self.sx_com, self.xx_com)
-            self._operateSerialPorts()
-        pass
+                port='COM12', baudrate=38400)
+        except Exception as e:
+            self._regSerial()
+            self.sx_serial = serial.Serial(
+                port='COM10', baudrate=38400)
+            self.xx_serial = serial.Serial(
+                port='COM12', baudrate=38400)
+
 
     def _findPorts(self, port1, port2):
         _rootkey = 'SYSTEM\CurrentControlSet\Services'
@@ -1829,25 +1854,20 @@ class logic():
         try:
             port1_root = winreg.OpenKey(
                 winreg.HKEY_LOCAL_MACHINE, key1, access=winreg.KEY_ALL_ACCESS)
-            print(winreg.QueryValueEx(port1_root, 'Port1'))
-            print(winreg.QueryValueEx(port1_root, 'Port2'))
         except FileNotFoundError:
             return 1
         try:
             port2_root = winreg.OpenKey(
                 winreg.HKEY_LOCAL_MACHINE, key2, access=winreg.KEY_ALL_ACCESS)
-            print(winreg.QueryValueEx(port2_root, 'Port1'))
-            print(winreg.QueryValueEx(port2_root, 'Port2'))
         except FileNotFoundError:
             return 2
         return 0
 
     def _clearSerialPorts(self):
-        import winreg
         _rootkey = r'SYSTEM\CurrentControlSet\Services'
         try:
             root = winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE, _rootkey + r'\VSBC8', access=winreg.KEY_ALL_ACCESS)
+                winreg.HKEY_LOCAL_MACHINE, _rootkey + r'\VSBC9', access=winreg.KEY_ALL_ACCESS)
             winreg.DeleteKey(root, 'Ports')
         except:
             pass
@@ -1856,66 +1876,109 @@ class logic():
         """
         系统注册表中添加虚拟串口配置
         """
-        import winreg
         #winreg.LoadKey(winreg.HKEY_LOCAL_MACHINE, r'SYSTEM\CurrentControlSet\Services\VSBC8', 'root.reg')
         _rootkey = r'SYSTEM\CurrentControlSet\Services'
         try:
-            root = winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE, _rootkey + r'\VSBC8', access=winreg.KEY_ALL_ACCESS)
-        except:
-            _root = winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE, _rootkey, access=winreg.KEY_ALL_ACCESS)
-            root = winreg.CreateKeyEx(
-                _root, 'VSBC8', access=winreg.KEY_ALL_ACCESS)
+            root = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, _rootkey + r'\VSBC9', winreg.KEY)
+            # root = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, _rootkey + r'\VSBC9', 0, (winreg.KEY_WOW64_32KEY+winreg.KEY_ALL_ACCESS))
+        except Exception as e:
+            _root = winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, _rootkey, winreg.KEY_SET_VALUE)
+            # _root = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, _rootkey, 0, (winreg.KEY_WOW64_32KEY+winreg.KEY_ALL_ACCESS))
 
-        winreg.SetValueEx(root, 'DisplayName', 0, winreg.REG_SZ, '')
-        winreg.SetValueEx(root, 'ErrorControl', 0,
-                          winreg.REG_DWORD, 0x00000001)
-        winreg.SetValueEx(root, 'ForceFifoEnable', 0,
-                          winreg.REG_DWORD, 0x00000001)
-        winreg.SetValueEx(root, 'Group', 0, winreg.REG_SZ, 'Extended Base')
-        winreg.SetValueEx(root, 'ImagePath', 0,
-                          winreg.REG_EXPAND_SZ, 'system32\DRIVERS\evsbc8.sys')
-        winreg.SetValueEx(root, 'LogFifo', 0, winreg.REG_DWORD, 0x00000000)
-        winreg.SetValueEx(root, 'RxFIFO', 0, winreg.REG_DWORD, 0x00000008)
-        winreg.SetValueEx(root, 'Start', 0, winreg.REG_DWORD, 0x00000003)
-        winreg.SetValueEx(root, 'Tag', 0, winreg.REG_DWORD, 0x00000014)
-        winreg.SetValueEx(root, 'TxFIFO', 0, winreg.REG_DWORD, 0x0000000e)
-        winreg.SetValueEx(root, 'Type', 0, winreg.REG_DWORD, 0x00000001)
+            root = winreg.CreateKey(
+                _root, 'VSBC9')
 
-        _enum = winreg.CreateKey(root, 'Enum')
-        winreg.SetValueEx(_enum, '0', 0, winreg.REG_SZ, r'Root\SYSTEM\0001')
-        winreg.SetValueEx(_enum, 'Count', 0, winreg.REG_DWORD, 0x00000001)
-        winreg.SetValueEx(_enum, 'NextInstance', 0,
-                          winreg.REG_DWORD, 0x00000001)
+        try:
 
-        _ports = winreg.CreateKey(root, 'Ports')
+            # winreg.SetValue(root, 'DisplayName', winreg.REG_SZ, '')
+            winreg.SetValueEx(root, 'ErrorControl', 0,
+                              winreg.REG_DWORD, 0x00000001)
+            winreg.SetValueEx(root, 'ForceFifoEnable', 0,
+                              winreg.REG_DWORD, 0x00000001)
+            winreg.SetValue(root, 'Group', winreg.REG_SZ, 'Extended Base')
+            winreg.SetValueEx(root, 'ImagePath', 0,
+                              winreg.REG_EXPAND_SZ, 'system32\DRIVERS\evsbc9.sys')
+            winreg.SetValueEx(root, 'LogFifo', 0, winreg.REG_DWORD, 0x00000000)
+            winreg.SetValueEx(root, 'RxFIFO', 0, winreg.REG_DWORD, 0x00000008)
+            winreg.SetValueEx(root, 'Start', 0, winreg.REG_DWORD, 0x00000003)
+            winreg.SetValueEx(root, 'Tag', 0, winreg.REG_DWORD, 0x00000017)
+            winreg.SetValueEx(root, 'TxFIFO', 0, winreg.REG_DWORD, 0x0000000e)
+            winreg.SetValueEx(root, 'Type', 0, winreg.REG_DWORD, 0x00000001)
 
-        _pair1 = winreg.CreateKey(
-            _ports, 'COM' + str(port1) + 'COM' + str(int(port1) + 10))
-        winreg.SetValueEx(_pair1, 'Port1', 0,
-                          winreg.REG_SZ, 'COM' + str(port1))
-        winreg.SetValueEx(_pair1, 'Port2', 0, winreg.REG_SZ,
-                          'COM' + str(int(port1) + 10))
-        winreg.SetValueEx(_pair1, 'StictBaudrate', 0, winreg.REG_DWORD, 0)
+            _enum = winreg.CreateKey(root, 'Enum')
+            winreg.SetValueEx(_enum, '0', 0, winreg.REG_SZ, r'Root\SYSTEM\0001')
+            winreg.SetValueEx(_enum, 'Count', 0, winreg.REG_DWORD, 0x00000001)
+            winreg.SetValueEx(_enum, 'NextInstance', 0,
+                              winreg.REG_DWORD, 0x00000001)
 
-        _pair2 = winreg.CreateKey(
-            _ports, 'COM' + str(port2) + 'COM' + str(int(port2) + 10))
-        winreg.SetValueEx(_pair2, 'Port1', 0,
-                          winreg.REG_SZ, 'COM' + str(port2))
-        winreg.SetValueEx(_pair2, 'Port2', 0, winreg.REG_SZ,
-                          'COM' + str(int(port2) + 10))
-        winreg.SetValueEx(_pair2, 'StictBaudrate', 0, winreg.REG_DWORD, 0)
+            _ports = winreg.CreateKey(root, 'Ports')
 
-    def _operateSerialPorts(self):
-        import os
+            _pair1 = winreg.CreateKey(
+                _ports, 'COM' + str(port1) + 'COM' + str(int(port1) + 10))
+            winreg.SetValueEx(_pair1, 'Port1', 0,
+                              winreg.REG_SZ, 'COM' + str(port1))
+            winreg.SetValueEx(_pair1, 'Port2', 0, winreg.REG_SZ,
+                              'COM' + str(int(port1) + 10))
+            winreg.SetValueEx(_pair1, 'StictBaudrate', 0, winreg.REG_DWORD, 0)
+            winreg.SetValueEx(_pair1, 'COM-Name-Arbiter1', 0, winreg.REG_DWORD, 0)
+            winreg.SetValueEx(_pair1, 'COM-Name-Arbiter2', 0, winreg.REG_DWORD, 0)
+            winreg.SetValueEx(_pair1, 'UserSession', 0, winreg.REG_SZ, '')
+
+            _pair2 = winreg.CreateKey(
+                _ports, 'COM' + str(port2) + 'COM' + str(int(port2) + 10))
+            winreg.SetValueEx(_pair2, 'Port1', 0,
+                              winreg.REG_SZ, 'COM' + str(port2))
+            winreg.SetValueEx(_pair2, 'Port2', 0, winreg.REG_SZ,
+                              'COM' + str(int(port2) + 10))
+            winreg.SetValueEx(_pair2, 'StictBaudrate', 0, winreg.REG_DWORD, 0)
+            winreg.SetValueEx(_pair2, 'COM-Name-Arbiter1', 0, winreg.REG_DWORD, 0)
+            winreg.SetValueEx(_pair2, 'COM-Name-Arbiter2', 0, winreg.REG_DWORD, 0)
+            winreg.SetValueEx(_pair2, 'UserSession', 0, winreg.REG_SZ, '')
+        except Exception as e:
+            winreg.CloseKey(root)
+
+
+    def _regSerial(self):
+        os.system('reg.exe')
+
+    def _serialReg(self):
         os.system('vs.exe')
+
+class script_generator():
+    def __init__(self):
+        pass
+
+class sender():
+    def __init__(self):
+        pass
+
+    def handle(self):
+        """
+        处理脚本
+        :return:
+        """
+        pass
+
+    def generate_server(self):
+        pass
+
+
+class receiver:
+    pass
+
+class data_handler:
+    pass
+
+
 
 def _ui():
     app = QtWidgets.QApplication(sys.argv)
     mw = QtWidgets.QMainWindow()
-    ui = UI()
-    ui.setupUi(mw)
+    ui_1103 = ui1103.Ui_Form()
+    # ui = UI()
+    # ui.setupUi(mw)
+    # mw.show()
+    ui_1103.setupUi(mw)
     mw.show()
     sys.exit(app.exec_())
 
